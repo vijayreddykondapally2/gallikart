@@ -59,6 +59,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _sync(state);
 
     return Scaffold(
+      backgroundColor: Colors.teal.shade50,
       appBar: AppBar(title: const Text(AppStrings.profileTitle)),
       body: state.loading
           ? const Loader()
@@ -68,54 +69,79 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _readOnlyField('Name', _nameController.text),
-                    _readOnlyField('Phone', _phoneController.text),
-                    _readOnlyField('Primary address', _addressController.text),
-                    const SizedBox(height: 12),
-                    PrimaryButton(
-                      label: 'Add New Address',
-                      onPressed: () => Navigator.pushNamed(context, AppRoutes.delivery),
+                    _sectionCard(
+                      title: 'Profile',
+                      icon: Icons.person_outline,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _readOnlyField('Name', _nameController.text),
+                          _readOnlyField('Phone', _phoneController.text),
+                          _readOnlyField('Primary address', _addressController.text),
+                          const SizedBox(height: 8),
+                          PrimaryButton(
+                            label: 'Add New Address',
+                            onPressed: () => Navigator.pushNamed(context, AppRoutes.delivery),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    Card(
+                    const SizedBox(height: 12),
+                    _sectionCard(
+                      title: 'Wallet',
+                      icon: Icons.account_balance_wallet,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Balance', style: TextStyle(fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '₹${wallet.balance.toStringAsFixed(2)}',
+                                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.teal),
+                                ),
+                              ],
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: () => ref.read(walletControllerProvider.notifier).credit(
+                                  amount: 100,
+                                  orderId: 'manual-topup',
+                                  note: 'Manual wallet top-up',
+                                ),
+                            icon: const Icon(Icons.add_circle_outline, color: Colors.teal),
+                            label: const Text('Add Money'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.teal,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _sectionCard(
+                      title: 'Support',
+                      icon: Icons.support_agent,
                       child: ListTile(
-                        title: const Text('Wallet'),
-                        subtitle: Text('Balance: ₹${wallet.balance.toStringAsFixed(2)}'),
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Customer Support'),
+                        subtitle: const Text('Call or WhatsApp for help'),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            TextButton(
-                              onPressed: () => ref.read(walletControllerProvider.notifier).credit(
-                                    amount: 100,
-                                    orderId: 'manual-topup',
-                                    note: 'Manual wallet top-up',
-                                  ),
-                              child: const Text('Add money'),
+                            IconButton(
+                              icon: const Icon(Icons.call, color: Colors.teal),
+                              onPressed: () => _launchUri(Uri.parse('tel:+911234567890')),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.account_balance_wallet_outlined),
-                              onPressed: () {},
+                              icon: const Icon(Icons.chat, color: Colors.teal),
+                              onPressed: () => _launchUri(Uri.parse('https://wa.me/911234567890')),
                             ),
                           ],
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ListTile(
-                      title: const Text('Customer Support'),
-                      subtitle: const Text('Call or WhatsApp for help'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.call),
-                            onPressed: () => _launchUri(Uri.parse('tel:+911234567890')),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.chat),
-                            onPressed: () => _launchUri(Uri.parse('https://wa.me/911234567890')),
-                          ),
-                        ],
                       ),
                     ),
                   ],
@@ -126,15 +152,58 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _readOnlyField(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 4),
-        Text(value.isEmpty ? '-' : value,
-            style: const TextStyle(fontSize: 16, color: Colors.black87)),
-        const Divider(),
-      ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.grey)),
+          const SizedBox(height: 4),
+          Text(value.isEmpty ? '-' : value, style: const TextStyle(fontSize: 16, color: Colors.black87)),
+          const Divider(height: 14),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionCard({required String title, required Widget child, IconData? icon}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.teal.shade50),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.teal.shade100,
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: 16, color: Colors.teal),
+                    const SizedBox(width: 6),
+                  ],
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              child,
+            ],
+          ),
+        ),
+      ),
     );
   }
 

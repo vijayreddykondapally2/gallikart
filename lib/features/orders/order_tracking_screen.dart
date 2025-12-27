@@ -38,80 +38,100 @@ class OrderTrackingScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final orders = ref.watch(orderControllerProvider);
     return Scaffold(
+      backgroundColor: Colors.teal.shade50,
       appBar: AppBar(title: const Text(AppStrings.ordersTitle)),
       body: orders.isEmpty
           ? const Center(child: Text('No orders yet'))
           : ListView.separated(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
               itemCount: orders.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
                 final order = orders[index];
                 final statusLabel = _statusMessages[order.status] ?? order.status;
                 final shortId = order.id.length > 4
                     ? order.id.substring(order.id.length - 4)
                     : order.id;
-                return Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              backgroundColor: AppColors.primary.withOpacity(0.1),
-                              foregroundColor: AppColors.primary,
-                              child: const Icon(Icons.local_shipping_rounded),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Instant Order • #$shortId',
-                                    style: const TextStyle(fontWeight: FontWeight.w700),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${formatCurrency(order.totalAmount)} • ${order.items.length} item${order.items.length == 1 ? '' : 's'}',
-                                    style: TextStyle(color: Colors.grey.shade700),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Placed on ${_formatDateTime(order.createdAt)}',
-                                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                                  ),
-                                ],
+                return Container(
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.teal.shade100),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.teal.shade100,
+                        blurRadius: 14,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: Colors.teal.shade50,
+                                foregroundColor: Colors.teal.shade700,
+                                child: const Icon(Icons.delivery_dining, size: 18),
                               ),
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        _modeChip('INSTANT'),
+                                        const SizedBox(width: 6),
+                                        _statusChip(order.status, statusLabel),
+                                        const Spacer(),
+                                        Text(
+                                          '#$shortId',
+                                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      '${formatCurrency(order.totalAmount)} • ${order.items.length} item${order.items.length == 1 ? '' : 's'}',
+                                      style: const TextStyle(fontWeight: FontWeight.w600),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Placed on ${_formatDateTime(order.createdAt)}',
+                                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          _statusTimeline(order),
+                          if (_etaLabel(order.status).isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Row(
                               children: [
-                                _statusChip(order.status, statusLabel),
-                                const SizedBox(height: 6),
-                                if (_etaLabel(order.status).isNotEmpty)
-                                  Text(
-                                    _etaLabel(order.status),
-                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                                  ),
+                                const Icon(Icons.schedule, size: 14, color: Colors.teal),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'ETA: ${_etaLabel(order.status)}',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                ),
                               ],
                             ),
                           ],
-                        ),
-                        const SizedBox(height: 12),
-                        _statusTimeline(order),
-                        const SizedBox(height: 12),
-                        Text(statusLabel, style: const TextStyle(fontWeight: FontWeight.w600)),
-                        if (_etaLabel(order.status).isNotEmpty)
-                          Text(
-                            'ETA: ${_etaLabel(order.status)}',
-                            style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -134,9 +154,9 @@ class OrderTrackingScreen extends ConsumerWidget {
             children: [
               _StatusDot(
                 color: isCompleted
-                    ? Colors.green
+                    ? Colors.teal.shade400
                     : isActive
-                        ? AppColors.primary
+                        ? Colors.teal
                         : Colors.grey.shade400,
                 isActive: isActive,
               ),
@@ -147,15 +167,15 @@ class OrderTrackingScreen extends ConsumerWidget {
                   style: TextStyle(
                     fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                     color: isCompleted
-                        ? Colors.green.shade700
+                        ? Colors.teal.shade700
                         : isActive
-                            ? AppColors.primary
+                            ? Colors.teal.shade800
                             : Colors.grey.shade700,
                   ),
                 ),
               ),
               if (isCompleted)
-                const Icon(Icons.check_circle, size: 16, color: Colors.green),
+                const Icon(Icons.check_circle, size: 16, color: Colors.teal),
             ],
           ),
         );
@@ -169,24 +189,46 @@ class OrderTrackingScreen extends ConsumerWidget {
     switch (status) {
       case 'DELIVERED':
         bg = Colors.green.shade50;
-        fg = Colors.green.shade700;
+        fg = Colors.green.shade800;
         break;
       case 'OUT_FOR_DELIVERY':
       case 'NEAR_YOU':
-        bg = Colors.orange.shade50;
-        fg = Colors.orange.shade700;
+        bg = Colors.amber.shade50;
+        fg = Colors.amber.shade800;
+        break;
+      case 'DISABLED':
+        bg = Colors.grey.shade200;
+        fg = Colors.grey.shade700;
         break;
       default:
-        bg = Colors.blue.shade50;
-        fg = Colors.blue.shade700;
+        bg = AppColors.primary.withOpacity(0.12);
+        fg = AppColors.primary;
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Text(label, style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 12)),
+      child: Text(
+        label,
+        style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 11),
+      ),
+    );
+  }
+
+  Widget _modeChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.teal),
+      ),
     );
   }
 

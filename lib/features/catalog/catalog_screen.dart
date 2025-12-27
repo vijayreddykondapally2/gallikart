@@ -67,8 +67,15 @@ class _CatalogScreenState extends State<CatalogScreen> {
     }
   }
 
-  void _addToCart(Product product, WidgetRef ref) {
+  void _addToCart(BuildContext context, Product product, WidgetRef ref) {
     ref.read(cartControllerProvider.notifier).add(product);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${product.name} added to cart'),
+        duration: const Duration(seconds: 1),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -79,12 +86,12 @@ class _CatalogScreenState extends State<CatalogScreen> {
         final cartItems = ref.watch(cartControllerProvider);
         final cartQty = cartItems.fold(0, (sum, item) => sum + item.quantity);
         return Scaffold(
-          backgroundColor: Colors.green.shade100,
+          backgroundColor: Colors.teal.shade50,
           appBar: AppBar(
             leading: _selectedCategory != null &&
                     _searchController.text.trim().isEmpty
                 ? IconButton(
-                    icon: const Icon(Icons.arrow_back),
+                    icon: const Icon(Icons.arrow_back, color: Colors.teal),
                     onPressed: () => setState(() => _selectedCategory = null),
                   )
                 : null,
@@ -103,12 +110,12 @@ class _CatalogScreenState extends State<CatalogScreen> {
             actions: [
               IconButton(
                 onPressed: () => Navigator.pushNamed(context, AppRoutes.profile),
-                icon: const Icon(Icons.person_outline),
+                icon: const Icon(Icons.person_outline, color: Colors.teal),
               ),
               IconButton(
                 onPressed: () =>
                     ref.read(catalogControllerProvider.notifier).refresh(),
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(Icons.refresh, color: Colors.teal),
               ),
             ],
           ),
@@ -286,9 +293,13 @@ class _CatalogScreenState extends State<CatalogScreen> {
         .fold(0, (sum, item) => sum + item.quantity);
 
     return Card(
-      elevation: 0,
+      elevation: 2,
+      shadowColor: Colors.teal.shade100,
       color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.teal.shade50),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
@@ -349,9 +360,15 @@ class _CatalogScreenState extends State<CatalogScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    product.category,
-                    style: TextStyle(color: Colors.grey.shade600),
+                  Row(
+                    children: [
+                      const Icon(Icons.category, size: 14, color: Colors.teal),
+                      const SizedBox(width: 4),
+                      Text(
+                        product.category,
+                        style: TextStyle(color: Colors.grey.shade600),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -410,7 +427,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                       ),
                       IconButton(
                         onPressed: product.stock > quantity
-                            ? () => _addToCart(product, ref)
+                          ? () => _addToCart(context, product, ref)
                             : null,
                         icon: const Icon(
                           Icons.add,
@@ -427,7 +444,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                 else
                   ElevatedButton.icon(
                     onPressed: product.stock > 0
-                        ? () => _addToCart(product, ref)
+                        ? () => _addToCart(context, product, ref)
                         : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
@@ -450,7 +467,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
       return const Center(child: Text('No categories available.'));
     }
     return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         childAspectRatio: 3 / 2,
@@ -467,16 +484,16 @@ class _CatalogScreenState extends State<CatalogScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300),
+              border: Border.all(color: Colors.teal.shade50),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
+                  color: Colors.teal.withOpacity(0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/constants/app_colors.dart';
 import '../../core/widgets/primary_button.dart';
 import 'models/recursive_order.dart';
 import 'recursive_order_controller.dart';
@@ -20,6 +21,7 @@ class RecursiveOrdersListScreen extends ConsumerWidget {
     final ordersAsync = ref.watch(recursiveOrderControllerProvider);
 
     return Scaffold(
+      backgroundColor: Colors.teal.shade50,
       appBar: AppBar(title: const Text('Saved Recursive Orders')),
       body: ordersAsync.when(
         data: (orders) {
@@ -27,134 +29,134 @@ class RecursiveOrdersListScreen extends ConsumerWidget {
             return const Center(child: Text('No saved recursive orders yet'));
           }
           return ListView.separated(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
             itemCount: orders.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final order = orders[index];
               final editable = order.frequency != 'instant' && order.status != 'DISABLED_FINAL';
               final disableAllowed = order.status != 'DISABLED_FINAL' && !order.refundProcessed;
-              return Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Chip(
-                            label: Text(order.frequency.toUpperCase()),
-                            backgroundColor: Colors.green.shade50,
-                            labelStyle: const TextStyle(fontWeight: FontWeight.w600),
-                            visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          Row(
-                            children: [
-                              Chip(
-                                label: Text(order.status),
-                                backgroundColor: order.status == 'DISABLED_FINAL'
-                                    ? Colors.red.shade50
-                                    : Colors.blue.shade50,
-                                labelStyle: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: order.status == 'DISABLED_FINAL'
-                                      ? Colors.red.shade700
-                                      : Colors.blue.shade700,
-                                ),
-                                visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
-                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Saved ${order.createdAt.toLocal().toString().split(' ').first}',
-                                style: const TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _buildSummary(order),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black87,
+               return Container(
+                 margin: const EdgeInsets.symmetric(vertical: 4),
+                 decoration: BoxDecoration(
+                   color: Colors.teal.shade100,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.teal.shade50),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.repeat_rounded, size: 16, color: Colors.teal),
+                            const SizedBox(width: 4),
+                            _chip(order.frequency.toUpperCase(), AppColors.primary.withOpacity(0.15), AppColors.primary),
+                            const SizedBox(width: 8),
+                            _statusChip(order.status),
+                            const Spacer(),
+                            Text(
+                              'Saved ${order.createdAt.toLocal().toString().split(' ').first}',
+                              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => _showOrderView(context, order),
-                              child: const Text('View'),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: PrimaryButton(
-                              label: 'Edit',
-                              onPressed: editable
-                                  ? () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Editing subscription order (${order.frequency} → keep or change plan)',
-                                          ),
-                                          duration: const Duration(seconds: 2),
-                                        ),
-                                      );
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => RecursiveOrdersScreen(
-                                            initialOrder: order,
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  : null,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: disableAllowed
-                                  ? () async {
-                                      final messenger = ScaffoldMessenger.of(context);
-                                      await ref
-                                          .read(
-                                            recursiveOrderControllerProvider.notifier,
-                                          )
-                                          .disableOrder(order);
-                                      messenger.showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Recurring order disabled, refund sent to wallet'),
-                                        ),
-                                      );
-                                    }
-                                  : null,
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.orange,
-                              ),
-                              child: Text(disableAllowed ? 'Disable' : 'Disabled'),
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (order.status == 'DISABLED_FINAL') ...[
                         const SizedBox(height: 8),
                         Text(
-                          'Order Disabled • Refund processed for remaining days',
-                          style: TextStyle(color: Colors.red.shade700, fontSize: 12, fontWeight: FontWeight.w600),
+                          _buildSummary(order),
+                          style: const TextStyle(fontSize: 12, color: Colors.black87),
                         ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () => _showOrderView(context, order),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  foregroundColor: Colors.teal,
+                                  side: BorderSide(color: Colors.teal.shade100),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                child: const Text('View'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: PrimaryButton(
+                                label: 'Edit',
+                                onPressed: editable
+                                    ? () {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Editing subscription order (${order.frequency} → keep or change plan)',
+                                            ),
+                                            duration: const Duration(seconds: 2),
+                                          ),
+                                        );
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => RecursiveOrdersScreen(
+                                              initialOrder: order,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    : null,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: disableAllowed
+                                    ? () async {
+                                        final messenger = ScaffoldMessenger.of(context);
+                                        await ref
+                                            .read(
+                                              recursiveOrderControllerProvider.notifier,
+                                            )
+                                            .disableOrder(order);
+                                        messenger.showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Recurring order disabled, refund sent to wallet'),
+                                          ),
+                                        );
+                                      }
+                                    : null,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: disableAllowed ? Colors.orange.shade800 : Colors.grey,
+                                  side: BorderSide(color: disableAllowed ? Colors.orange.shade200 : Colors.grey.shade300),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                child: Text(disableAllowed ? 'Disable' : 'Disabled'),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (order.status == 'DISABLED_FINAL') ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'Order Disabled • Refund processed for remaining days',
+                            style: TextStyle(color: Colors.red.shade700, fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               );
@@ -226,6 +228,43 @@ class RecursiveOrdersListScreen extends ConsumerWidget {
     }
     return 'Items: $itemCount$timePart$addressPart';
   }
+}
+
+Widget _chip(String label, Color bg, Color fg) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Text(
+      label,
+      style: TextStyle(color: fg, fontSize: 11, fontWeight: FontWeight.w700),
+    ),
+  );
+}
+
+Widget _statusChip(String status) {
+  Color bg;
+  Color fg;
+  switch (status) {
+    case 'DISABLED_FINAL':
+      bg = Colors.grey.shade200;
+      fg = Colors.grey.shade800;
+      break;
+    case 'ACTIVE':
+      bg = Colors.teal.shade50;
+      fg = Colors.teal.shade800;
+      break;
+    case 'DELIVERED':
+      bg = Colors.green.shade50;
+      fg = Colors.green.shade800;
+      break;
+    default:
+      bg = Colors.blue.shade50;
+      fg = Colors.blue.shade800;
+  }
+  return _chip(status, bg, fg);
 }
 
 void _showOrderView(BuildContext context, RecursiveOrder order) {

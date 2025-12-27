@@ -28,187 +28,164 @@ class CartScreen extends ConsumerWidget {
     final total = cartItems.fold(0.0, (sum, item) => sum + item.total);
 
     return Scaffold(
+      backgroundColor: Colors.teal.shade50,
       appBar: AppBar(title: const Text(AppStrings.cartTitle)),
       body: cartItems.isEmpty
           ? const Center(child: Text('Cart is empty'))
           : Column(
               children: [
                 Container(
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(12),
+                  width: double.infinity,
+                  margin: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade100,
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.teal.shade100),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.teal.shade100,
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.shopping_cart, color: Colors.green),
+                      const Icon(Icons.shopping_cart_outlined, color: Colors.teal, size: 18),
                       const SizedBox(width: 8),
                       Text(
-                        'You have added total of ${cartItems.length} items',
-                        style: const TextStyle(
-                          color: Colors.green,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        '${cartItems.length} item${cartItems.length == 1 ? '' : 's'} in cart',
+                        style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.teal),
                       ),
                     ],
                   ),
                 ),
                 Expanded(
                   child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
                     itemCount: cartItems.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final cartItem = cartItems[index];
-                      return Card(
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
+                      return Container(
+                        margin: EdgeInsets.zero,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.teal.shade50),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.teal.shade100,
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: AppColors.background,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: cartItem.product.imageUrl.isNotEmpty
-                                      ? Image.network(
-                                          cartItem.product.imageUrl,
-                                          fit: BoxFit.cover,
-                                          errorBuilder:
-                                              (context, error, stackTrace) {
-                                                return Center(
-                                                  child: Text(
-                                                    cartItem
-                                                            .product
-                                                            .name
-                                                            .isNotEmpty
-                                                        ? cartItem
-                                                              .product
-                                                              .name[0]
-                                                              .toUpperCase()
-                                                        : '?',
-                                                    style: const TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                        )
-                                      : Center(
-                                          child: Text(
-                                            cartItem.product.name.isNotEmpty
-                                                ? cartItem.product.name[0]
-                                                      .toUpperCase()
-                                                : '?',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
+                        child: Material(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 46,
+                                  height: 46,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.background,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: cartItem.product.imageUrl.isNotEmpty
+                                        ? Image.network(
+                                            cartItem.product.imageUrl,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Center(
+                                                child: Text(
+                                                  cartItem.product.name.isNotEmpty
+                                                      ? cartItem.product.name[0].toUpperCase()
+                                                      : '?',
+                                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                                ),
+                                              );
+                                            },
+                                          )
+                                        : Center(
+                                            child: Text(
+                                              cartItem.product.name.isNotEmpty
+                                                  ? cartItem.product.name[0].toUpperCase()
+                                                  : '?',
+                                              style: const TextStyle(fontWeight: FontWeight.bold),
                                             ),
                                           ),
-                                        ),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.local_grocery_store, size: 14, color: Colors.teal),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              cartItem.product.name,
+                                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        children: [
+                                          _quantityButton(
+                                            onTap: () => cartController.decrement(cartItem.product.id),
+                                            icon: Icons.remove,
+                                          ),
+                                          Container(
+                                            margin: const EdgeInsets.symmetric(horizontal: 6),
+                                            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade100,
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              '${cartItem.quantity}',
+                                              style: const TextStyle(fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                          _quantityButton(
+                                            onTap: () => cartController.add(cartItem.product),
+                                            icon: Icons.add,
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      cartItem.product.name,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                      formatCurrency(cartItem.product.price),
+                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                                     ),
                                     const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        SizedBox(
-                                          width: 32,
-                                          height: 32,
-                                          child: IconButton(
-                                            padding: EdgeInsets.zero,
-                                            iconSize: 18,
-                                            onPressed: () => cartController
-                                                .decrement(cartItem.product.id),
-                                            icon: const Icon(Icons.remove),
-                                          ),
-                                        ),
-                                        Container(
-                                          margin: const EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 4,
-                                            horizontal: 10,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey.shade100,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            '${cartItem.quantity}',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          width: 32,
-                                          height: 32,
-                                          child: IconButton(
-                                            padding: EdgeInsets.zero,
-                                            iconSize: 18,
-                                            onPressed: () => cartController.add(
-                                              cartItem.product,
-                                            ),
-                                            icon: const Icon(Icons.add),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 6),
                                     Text(
-                                      formatCurrency(cartItem.product.price),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      formatCurrency(cartItem.total),
+                                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.teal),
                                     ),
                                   ],
                                 ),
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    'Total',
-                                    style: TextStyle(
-                                      color: Colors.grey.shade600,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  Text(
-                                    formatCurrency(cartItem.total),
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       );
@@ -216,7 +193,7 @@ class CartScreen extends ConsumerWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     border: Border(
@@ -232,7 +209,7 @@ class CartScreen extends ConsumerWidget {
                           const Text(
                             'Total',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 15,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -241,6 +218,7 @@ class CartScreen extends ConsumerWidget {
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
+                              color: Colors.teal,
                             ),
                           ),
                         ],
@@ -278,6 +256,22 @@ class CartScreen extends ConsumerWidget {
                 ),
               ],
             ),
+    );
+  }
+
+  Widget _quantityButton({required VoidCallback onTap, required IconData icon}) {
+    return SizedBox(
+      width: 32,
+      height: 32,
+      child: Material(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Icon(icon, size: 16, color: Colors.teal.shade800),
+        ),
+      ),
     );
   }
 

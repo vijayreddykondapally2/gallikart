@@ -193,8 +193,20 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
           final label = m[0].toUpperCase() + m.substring(1);
           final selected = _mode == m;
           return ChoiceChip(
-            label: Text(label),
+            label: Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.white : Colors.teal.shade900,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             selected: selected,
+            selectedColor: Colors.teal.shade600,
+            backgroundColor: Colors.teal.shade50,
+            side: BorderSide(
+              color: selected ? Colors.transparent : Colors.teal.shade200,
+            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             onSelected: (_) => setState(() => _mode = m),
           );
         }).toList(),
