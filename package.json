@@ -1,0 +1,20 @@
+{
+  "name": "gallikart",
+  "version": "1.0.0",
+  "description": "Quick-commerce Flutter monorepo targeting Hyderabad outskirts.",
+  "type": "module",
+  "main": "seed.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "firebase-admin": "^13.6.0"
+  }
+}

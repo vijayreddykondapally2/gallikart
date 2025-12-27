@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "775719617484",
+    "project_id": "gallikart-516f2",
+    "storage_bucket": "gallikart-516f2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:775719617484:android:a777dc32a45e372db7d369",
+        "android_client_info": {
+          "package_name": "com.example.gallikart"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCB8WKAgwOiBKQa_kUBM0OaMMqQ1gLW8Bs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
