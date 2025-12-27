@@ -52,6 +52,7 @@ class CartController extends StateNotifier<List<CartItem>> {
     state = [];
   }
 
+  // Cart state currently lives in memory; add external persistence (e.g., local storage) to survive restarts.
   double get total => state.fold(0, (sum, item) => sum + item.total);
 }
 

@@ -5,7 +5,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
@@ -27,7 +26,6 @@ class CatalogScreen extends StatefulWidget {
 class _CatalogScreenState extends State<CatalogScreen> {
   int _selectedIndex = 0;
   late final TextEditingController _searchController;
-
   String? _selectedCategory;
 
   static const Map<String, String> categoryImages = {
@@ -54,37 +52,23 @@ class _CatalogScreenState extends State<CatalogScreen> {
     super.dispose();
   }
 
-  void _addToCart(Product product, WidgetRef ref) {
-    ref.read(cartControllerProvider.notifier).add(product);
-  }
-
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    setState(() => _selectedIndex = index);
     switch (index) {
-      case 0: // Cart
+      case 0:
         Navigator.pushNamed(context, AppRoutes.cart);
         break;
-      case 1: // Orders
+      case 1:
         Navigator.pushNamed(context, AppRoutes.orders);
         break;
-      case 2: // Recursive Orders
+      case 2:
         Navigator.pushNamed(context, AppRoutes.recursive);
         break;
     }
   }
 
-  void _launchWhatsApp() async {
-    const url =
-        'https://wa.me/1234567890?text=Hi%20Gallikart,%20I%20want%20to%20order%20groceries';
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url));
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not launch WhatsApp')),
-      );
-    }
+  void _addToCart(Product product, WidgetRef ref) {
+    ref.read(cartControllerProvider.notifier).add(product);
   }
 
   @override
@@ -92,11 +76,12 @@ class _CatalogScreenState extends State<CatalogScreen> {
     return Consumer(
       builder: (context, ref, child) {
         final state = ref.watch(catalogControllerProvider);
+        final cartItems = ref.watch(cartControllerProvider);
+        final cartQty = cartItems.fold(0, (sum, item) => sum + item.quantity);
         return Scaffold(
           backgroundColor: Colors.green.shade100,
           appBar: AppBar(
-            leading:
-                _selectedCategory != null &&
+            leading: _selectedCategory != null &&
                     _searchController.text.trim().isEmpty
                 ? IconButton(
                     icon: const Icon(Icons.arrow_back),
@@ -117,52 +102,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
             ),
             actions: [
               IconButton(
-                onPressed: () =>
-                    Navigator.pushNamed(context, AppRoutes.profile),
+                onPressed: () => Navigator.pushNamed(context, AppRoutes.profile),
                 icon: const Icon(Icons.person_outline),
-              ),
-              Consumer(
-                builder: (context, ref, child) {
-                  final cartItems = ref.watch(cartControllerProvider);
-                  final totalQuantity = cartItems.fold(
-                    0,
-                    (sum, item) => sum + item.quantity,
-                  );
-                  return Stack(
-                    children: [
-                      IconButton(
-                        onPressed: () =>
-                            Navigator.pushNamed(context, AppRoutes.cart),
-                        icon: const Icon(Icons.shopping_cart),
-                      ),
-                      if (totalQuantity > 0)
-                        Positioned(
-                          right: 8,
-                          top: 8,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            constraints: const BoxConstraints(
-                              minWidth: 16,
-                              minHeight: 16,
-                            ),
-                            child: Text(
-                              totalQuantity > 99 ? '99+' : '$totalQuantity',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                    ],
-                  );
-                },
               ),
               IconButton(
                 onPressed: () =>
@@ -190,14 +131,13 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   : const <Product>[];
               final List<Product> categoryProducts =
                   !isSearching && _selectedCategory != null
-                  ? products
-                        .where(
-                          (product) =>
-                              _primaryCategory(product.category) ==
-                              _selectedCategory,
-                        )
-                        .toList()
-                  : const [];
+                      ? products
+                          .where(
+                            (product) => _primaryCategory(product.category) ==
+                                _selectedCategory,
+                          )
+                          .toList()
+                      : const [];
               final categorySummaries = _buildCategorySummaries(products);
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -230,13 +170,13 @@ class _CatalogScreenState extends State<CatalogScreen> {
                             ref: ref,
                           )
                         : _selectedCategory != null
-                        ? _buildProductListView(
-                            title: '$_selectedCategory items',
-                            products: categoryProducts,
-                            emptyMessage: 'No items in $_selectedCategory',
-                            ref: ref,
-                          )
-                        : _buildCategoryGridView(categorySummaries),
+                            ? _buildProductListView(
+                                title: '$_selectedCategory items',
+                                products: categoryProducts,
+                                emptyMessage: 'No items in $_selectedCategory',
+                                ref: ref,
+                              )
+                            : _buildCategoryGridView(categorySummaries),
                   ),
                 ],
               );
@@ -245,13 +185,46 @@ class _CatalogScreenState extends State<CatalogScreen> {
             error: (error, _) => ErrorView(message: error.toString()),
           ),
           bottomNavigationBar: BottomNavigationBar(
-            items: const <BottomNavigationBarItem>[
+            items: <BottomNavigationBarItem>[
               BottomNavigationBarItem(
-                icon: Icon(Icons.shopping_cart),
+                icon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.shopping_cart),
+                    if (cartQty > 0)
+                      Positioned(
+                        right: -6,
+                        top: -6,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            cartQty > 99 ? '99+' : '$cartQty',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
                 label: 'Cart',
               ),
-              BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Orders'),
-              BottomNavigationBarItem(
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.list),
+                label: 'Orders',
+              ),
+              const BottomNavigationBarItem(
                 icon: Icon(Icons.repeat),
                 label: 'Recursive',
               ),

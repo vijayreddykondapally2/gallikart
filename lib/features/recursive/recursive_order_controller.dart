@@ -5,13 +5,16 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../wallet/wallet_controller.dart';
 import 'models/recursive_order.dart';
 import 'recursive_order_repository.dart';
 
 class RecursiveOrderController extends StateNotifier<AsyncValue<List<RecursiveOrder>>> {
-  RecursiveOrderController(this._repository) : super(const AsyncValue.data([]));
+  RecursiveOrderController(this._repository, this._walletController)
+      : super(const AsyncValue.data([]));
 
   final RecursiveOrderRepository _repository;
+  final WalletController _walletController;
 
   Future<void> markDeltaPaid({
     required String recurringOrderId,
@@ -67,9 +70,54 @@ class RecursiveOrderController extends StateNotifier<AsyncValue<List<RecursiveOr
       state = AsyncValue.error(e, st);
     }
   }
+
+  Future<void> disableOrder(RecursiveOrder order) async {
+    final refundAmount = _computeRefundForFutureDays(order);
+    final disabledAt = DateTime.now();
+
+    final updated = await _repository.disableWithRefund(
+      order: order,
+      refundAmount: refundAmount,
+      disabledAt: disabledAt,
+    );
+
+    if (updated != null && updated.refundProcessed && !order.refundProcessed && refundAmount > 0) {
+      _walletController.credit(
+        amount: refundAmount,
+        orderId: order.id,
+        note: 'Recurring order disabled refund',
+      );
+    }
+
+    await loadOrders();
+  }
+
+  double _computeRefundForFutureDays(RecursiveOrder order) {
+    if (order.refundProcessed) return 0;
+    final delivered = order.deliveredDays.toSet();
+    final totals = order.dayTotals;
+    if (totals.isEmpty) {
+      // Fallback for legacy orders without per-day totals: refund remaining amount if nothing delivered.
+      return delivered.isEmpty ? order.currentAmount : 0;
+    }
+    double refundable = 0;
+    totals.forEach((day, amount) {
+      if (!delivered.contains(day)) {
+        refundable += amount;
+      }
+    });
+    if (refundable < 0) return 0;
+    if (refundable > order.currentAmount) {
+      return order.currentAmount;
+    }
+    return refundable;
+  }
 }
 
 final recursiveOrderControllerProvider =
     StateNotifierProvider<RecursiveOrderController, AsyncValue<List<RecursiveOrder>>>(
-  (ref) => RecursiveOrderController(ref.read(recursiveOrderRepositoryProvider))..loadOrders(),
+  (ref) => RecursiveOrderController(
+    ref.read(recursiveOrderRepositoryProvider),
+    ref.read(walletControllerProvider.notifier),
+  )..loadOrders(),
 );

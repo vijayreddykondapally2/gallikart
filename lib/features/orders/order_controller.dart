@@ -50,7 +50,7 @@ class OrderController extends StateNotifier<List<Order>> {
       );
     }
     final netDue = applyWallet ? walletUse.remaining : total;
-    final status = netDue <= 0 ? 'paid' : 'pending_payment';
+    const status = 'PLACED';
     final order = Order(
       id: id,
       items: snapshot,
@@ -97,7 +97,7 @@ class OrderController extends StateNotifier<List<Order>> {
       );
     }
     final netDue = applyWallet ? walletUse.remaining : amount;
-    final status = netDue <= 0 ? 'paid' : 'pending_payment';
+    const status = 'PLACED';
     final order = Order(
       id: id,
       items: items,
@@ -128,7 +128,7 @@ class OrderController extends StateNotifier<List<Order>> {
     String? paymentReference,
     double walletAppliedExtra = 0,
   }) async {
-    if (order.status == 'paid') {
+    if (order.status == 'DELIVERED') {
       return order;
     }
 
@@ -139,7 +139,7 @@ class OrderController extends StateNotifier<List<Order>> {
         totalAmount: order.totalAmount,
         walletApplied: order.walletApplied,
         amountDue: 0,
-        status: 'paid',
+        status: 'PLACED',
         createdAt: order.createdAt,
         paymentMethod: order.paymentMethod ?? paymentMethod,
         paymentReference: paymentReference ?? order.paymentReference,
@@ -177,7 +177,7 @@ class OrderController extends StateNotifier<List<Order>> {
       totalAmount: order.totalAmount,
       walletApplied: order.walletApplied + walletToUse,
       amountDue: 0,
-      status: 'paid',
+      status: 'PLACED',
       createdAt: order.createdAt,
       paymentMethod: netDue <= 0 ? 'wallet' : paymentMethod,
       paymentReference: paymentReference,
@@ -197,6 +197,51 @@ class OrderController extends StateNotifier<List<Order>> {
           );
     }
     return confirmed;
+  }
+
+  Future<Order?> updateStatus({
+    required Order order,
+    required String status,
+  }) async {
+    if (order.status == status) return order;
+    final updated = _applyStatus(order, status);
+    state = [...state.where((o) => o.id != order.id), updated];
+    await _repository.placeOrder(updated);
+    return updated;
+  }
+
+  Order _applyStatus(Order order, String status) {
+    final now = DateTime.now();
+    switch (status) {
+      case 'CONFIRMED':
+        return order.copyWith(
+          status: status,
+          confirmedAt: order.confirmedAt ?? now,
+        );
+      case 'PACKING':
+        return order.copyWith(
+          status: status,
+          packedAt: order.packedAt ?? now,
+        );
+      case 'OUT_FOR_DELIVERY':
+        return order.copyWith(
+          status: status,
+          outForDeliveryAt: order.outForDeliveryAt ?? now,
+        );
+      case 'NEAR_YOU':
+        return order.copyWith(
+          status: status,
+          nearYouAt: order.nearYouAt ?? now,
+        );
+      case 'DELIVERED':
+        return order.copyWith(
+          status: status,
+          deliveredAt: order.deliveredAt ?? now,
+        );
+      case 'PLACED':
+      default:
+        return order.copyWith(status: 'PLACED');
+    }
   }
 }
 

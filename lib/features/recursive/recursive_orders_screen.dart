@@ -686,6 +686,7 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
     final priorTotal = widget.initialOrder?.currentAmount ?? 0;
     final basePaid = widget.initialOrder?.basePaidAmount ?? total;
     final delta = total - priorTotal;
+    final dayTotals = <String, double>{'Daily': total};
     await _handleSave(
       context,
       products,
@@ -698,6 +699,7 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
       deliveryWeekStart,
       plannedWeekStart: null,
       monthlyDay: null,
+      dayTotals: dayTotals,
     );
   }
 
@@ -806,6 +808,7 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
     final priorTotal = widget.initialOrder?.currentAmount ?? 0;
     final delta = total - priorTotal;
     final deliveryWeekStart = weekStart(weeks.first);
+    final dayTotals = _dayTotalsForWeekly(weeklyClean, products, multiplier: weeks.length.toDouble());
 
     await _handleSave(
       context,
@@ -819,6 +822,7 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
       deliveryWeekStart,
       plannedWeekStart: weeks.first,
       monthlyDay: null,
+      dayTotals: dayTotals,
     );
   }
 
@@ -829,6 +833,18 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
       if (filtered.isNotEmpty) weeklyClean[entry.key] = filtered;
     }
     return weeklyClean;
+  }
+
+  Map<String, double> _dayTotalsForWeekly(
+    Map<String, Map<String, int>> weekly,
+    List<Product> products, {
+    double multiplier = 1,
+  }) {
+    final totals = <String, double>{};
+    weekly.forEach((day, items) {
+      totals[day] = _sum(items, products) * multiplier;
+    });
+    return totals;
   }
 
   Future<bool?> _showWeeklyReview(
@@ -923,6 +939,7 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
     final basePaid = widget.initialOrder?.basePaidAmount ?? total;
     final priorTotal = widget.initialOrder?.currentAmount ?? 0;
     final delta = total - priorTotal;
+    final dayTotals = <String, double>{'Monthly': total};
 
     await _handleSave(
       context,
@@ -936,6 +953,7 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
       deliveryWeekStart,
       plannedWeekStart: null,
       monthlyDay: _monthlyDay,
+      dayTotals: dayTotals,
     );
   }
 
@@ -951,12 +969,13 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
     DateTime deliveryWeekStart, {
     DateTime? plannedWeekStart,
     int? monthlyDay,
+    Map<String, double> dayTotals = const {},
   }) async {
     final priorPaid = widget.initialOrder?.paidAmount ?? 0;
     double paidAmount = priorPaid;
     double deltaPendingAmount = 0;
     double walletAdjustmentAmount = 0;
-    String status = widget.initialOrder?.status ?? 'active';
+    String status = widget.initialOrder?.status ?? 'ACTIVE';
     Order? pendingOrder;
 
     if (delta < 0) {
@@ -967,7 +986,7 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
             note: 'Recurring order reduction',
           );
       walletAdjustmentAmount = credit;
-      status = 'active';
+      status = 'ACTIVE';
     } else if (delta > 0) {
       final cartItems = _toCartItems(items, products);
       pendingOrder = ref.read(orderControllerProvider.notifier).createPendingAmount(
@@ -984,7 +1003,7 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
           );
       deltaPendingAmount = pendingOrder.amountDue;
       paidAmount = priorPaid + pendingOrder.walletApplied;
-      status = deltaPendingAmount > 0 ? 'active_pending_payment' : 'active';
+      status = deltaPendingAmount > 0 ? 'ACTIVE_PENDING_PAYMENT' : 'ACTIVE';
     }
 
     final order = RecursiveOrder(
@@ -1006,6 +1025,10 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
       walletAdjustmentAmount: walletAdjustmentAmount,
       currentAmount: total,
       status: status,
+      deliveredDays: widget.initialOrder?.deliveredDays ?? const [],
+      refundedAmount: widget.initialOrder?.refundedAmount ?? 0,
+      refundProcessed: widget.initialOrder?.refundProcessed ?? false,
+      dayTotals: dayTotals,
     );
 
     await ref.read(recursiveOrderControllerProvider.notifier).saveOrder(order);

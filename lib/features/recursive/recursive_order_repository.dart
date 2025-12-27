@@ -23,6 +23,13 @@ class RecursiveOrderRepository {
     return docs.map((doc) => RecursiveOrder.fromMap(doc.data())).toList();
   }
 
+  Future<RecursiveOrder?> fetchById(String id) async {
+    if (id.isEmpty) return null;
+    final doc = await _service.collection(_collectionName).doc(id).get();
+    if (!doc.exists) return null;
+    return RecursiveOrder.fromMap(doc.data()!);
+  }
+
   Future<void> saveOrder(RecursiveOrder order) async {
     final docRef = _service.collection(_collectionName).doc(order.id.isEmpty ? null : order.id);
     final orderWithId = order.id.isEmpty ? order.copyWith(id: docRef.id) : order;
@@ -39,6 +46,31 @@ class RecursiveOrderRepository {
     await _service.collection(_collectionName).doc(id).delete();
   }
 
+  Future<RecursiveOrder?> disableWithRefund({
+    required RecursiveOrder order,
+    required double refundAmount,
+    required DateTime disabledAt,
+  }) async {
+    if (order.id.isEmpty) return order;
+    return _service.runTransaction<RecursiveOrder?>((transaction) async {
+      final docRef = _service.collection(_collectionName).doc(order.id);
+      final snapshot = await transaction.get(docRef);
+      if (!snapshot.exists) return order;
+      final latest = RecursiveOrder.fromMap(snapshot.data()!);
+      if (latest.refundProcessed || latest.status == 'DISABLED_FINAL') {
+        return latest;
+      }
+      final updated = latest.copyWith(
+        status: 'DISABLED_FINAL',
+        refundProcessed: true,
+        refundedAmount: refundAmount,
+        disabledAt: disabledAt,
+      );
+      transaction.set(docRef, updated.toMap());
+      return updated;
+    });
+  }
+
   Future<RecursiveOrder?> findDuplicate({
     required String userId,
     required DateTime deliveryWeekStart,
@@ -47,14 +79,14 @@ class RecursiveOrderRepository {
   }) async {
     final normalizedWeek = weekStart(deliveryWeekStart);
     final query = await _service
-        .collection(_collectionName)
-        .where('userId', isEqualTo: userId)
-        .where('frequency', isEqualTo: frequency)
-        .where('deliveryAddressId', isEqualTo: addressId)
-        .where('status', whereIn: ['active', 'active_pending_payment', 'upcoming'])
-        .where('plannedWeekStart', isEqualTo: Timestamp.fromDate(normalizedWeek))
-        .limit(1)
-        .get();
+      .collection(_collectionName)
+      .where('userId', isEqualTo: userId)
+      .where('frequency', isEqualTo: frequency)
+      .where('deliveryAddressId', isEqualTo: addressId)
+      .where('status', whereIn: ['ACTIVE', 'ACTIVE_PENDING_PAYMENT', 'UPCOMING', 'active', 'active_pending_payment', 'upcoming'])
+      .where('plannedWeekStart', isEqualTo: Timestamp.fromDate(normalizedWeek))
+      .limit(1)
+      .get();
 
     if (query.docs.isEmpty) return null;
     return RecursiveOrder.fromMap(query.docs.first.data());

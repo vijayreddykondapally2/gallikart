@@ -24,7 +24,12 @@ class RecursiveOrder {
     this.deliveryLatitude,
     this.deliveryLongitude,
     this.plannedWeekStart,
-    this.status = 'active',
+    this.status = 'ACTIVE',
+    this.disabledAt,
+    this.deliveredDays = const <String>[],
+    this.refundedAmount = 0,
+    this.refundProcessed = false,
+    this.dayTotals = const <String, double>{},
   });
 
   final String id;
@@ -44,7 +49,12 @@ class RecursiveOrder {
   final double? deliveryLatitude;
   final double? deliveryLongitude;
   final DateTime? plannedWeekStart;
-  final String status; // active | paused | cancelled
+  final String status; // ACTIVE | DISABLED_FINAL | COMPLETED
+  final DateTime? disabledAt;
+  final List<String> deliveredDays;
+  final double refundedAmount;
+  final bool refundProcessed;
+  final Map<String, double> dayTotals; // per-day totals for refund logic
 
   Map<String, dynamic> toMap() {
     return {
@@ -68,6 +78,11 @@ class RecursiveOrder {
           ? Timestamp.fromDate(plannedWeekStart!)
           : null,
       'status': status,
+      'disabledAt': disabledAt != null ? Timestamp.fromDate(disabledAt!) : null,
+      'deliveredDays': deliveredDays,
+      'refundedAmount': refundedAmount,
+      'refundProcessed': refundProcessed,
+      'dayTotals': dayTotals,
     };
   }
 
@@ -93,7 +108,16 @@ class RecursiveOrder {
       deliveryLatitude: (map['deliveryLatitude'] as num?)?.toDouble(),
       deliveryLongitude: (map['deliveryLongitude'] as num?)?.toDouble(),
       plannedWeekStart: (map['plannedWeekStart'] as Timestamp?)?.toDate(),
-      status: map['status'] as String? ?? 'active',
+      status: (map['status'] as String? ?? 'ACTIVE').toUpperCase(),
+      disabledAt: (map['disabledAt'] as Timestamp?)?.toDate(),
+      deliveredDays: List<String>.from(map['deliveredDays'] as List? ?? const <String>[]),
+      refundedAmount: (map['refundedAmount'] as num?)?.toDouble() ?? 0,
+      refundProcessed: map['refundProcessed'] as bool? ?? false,
+      dayTotals: Map<String, double>.from(
+        (map['dayTotals'] as Map? ?? const <String, double>{}).map(
+          (key, value) => MapEntry(key.toString(), (value as num).toDouble()),
+        ),
+      ),
     );
   }
 
@@ -116,6 +140,11 @@ class RecursiveOrder {
     double? deliveryLongitude,
     DateTime? plannedWeekStart,
     String? status,
+    DateTime? disabledAt,
+    List<String>? deliveredDays,
+    double? refundedAmount,
+    bool? refundProcessed,
+    Map<String, double>? dayTotals,
   }) {
     return RecursiveOrder(
       id: id ?? this.id,
@@ -137,6 +166,11 @@ class RecursiveOrder {
       deliveryLongitude: deliveryLongitude ?? this.deliveryLongitude,
       plannedWeekStart: plannedWeekStart ?? this.plannedWeekStart,
       status: status ?? this.status,
+      disabledAt: disabledAt ?? this.disabledAt,
+      deliveredDays: deliveredDays ?? this.deliveredDays,
+      refundedAmount: refundedAmount ?? this.refundedAmount,
+      refundProcessed: refundProcessed ?? this.refundProcessed,
+      dayTotals: dayTotals ?? this.dayTotals,
     );
   }
 }
