@@ -54,6 +54,113 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
   };
 
   final List<String> _modes = ['daily', 'weekly', 'monthly'];
+  static const List<String> _specialCategories = [
+    'Gym / Fitness',
+    'Weight Loss',
+    'Weight Gain',
+    'Healthy Heart',
+    'Sugar Control',
+    'BP Control',
+    'Cholesterol Control',
+  ];
+  static const Map<String, List<String>> _specialCategoryKeywords = {
+    'Gym / Fitness': [
+      'boiled egg',
+      'paneer',
+      'milk',
+      'curd',
+      'greek yogurt',
+      'sprout',
+      'peanut chikki',
+      'banana',
+      'protein ladoo',
+      'peanut butter',
+      'oats',
+      'multigrain bread',
+    ],
+    'Weight Loss': [
+      'cucumber',
+      'carrot',
+      'tomato',
+      'bottle gourd',
+      'lauki',
+      'ridge gourd',
+      'spinach',
+      'cabbage',
+      'salad',
+      'abc juice',
+      'lemon water',
+      'ragi',
+    ],
+    'Weight Gain': [
+      'banana',
+      'sweet potato',
+      'potato',
+      'avocado',
+      'date',
+      'full cream milk',
+      'peanut butter',
+      'dry fruit',
+      'energy bar',
+      'poha',
+    ],
+    'Healthy Heart': [
+      'apple',
+      'pomegranate',
+      'guava',
+      'tomato',
+      'spinach',
+      'beetroot',
+      'oats',
+      'olive oil',
+      'flax seed',
+      'walnut',
+      'low-fat milk',
+      'abc juice',
+    ],
+    'Sugar Control': [
+      'bitter gourd',
+      'karela',
+      'bottle gourd',
+      'ridge gourd',
+      'cucumber',
+      'tomato',
+      'spinach',
+      'bean',
+      'sprout',
+      'ragi',
+      'millet',
+      'unsweetened curd',
+      'herbal juice',
+    ],
+    'BP Control': [
+      'banana',
+      'spinach',
+      'beetroot',
+      'tomato',
+      'cucumber',
+      'carrot',
+      'coconut water',
+      'oats',
+      'low-salt',
+      'garlic',
+      'lemon water',
+    ],
+    'Cholesterol Control': [
+      'apple',
+      'guava',
+      'carrot',
+      'bean',
+      'okra',
+      'lady',
+      'oats',
+      'barley',
+      'flax seed',
+      'almond',
+      'walnut',
+      'olive oil',
+    ],
+  };
   String _mode = 'daily';
   String _deliverySlot = '7:00 - 9:00 AM';
   bool _applyWallet = true;
@@ -72,6 +179,7 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
   late final Set<DateTime> _selectedWeeks;
   String _searchQuery = '';
   String _selectedWeekday = _weekdayOrder.first;
+  String? _selectedCategory;
 
   @override
   void initState() {
@@ -295,6 +403,8 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
       orderedCategories: orderedCategories,
       currentProductIds: _isEditing ? _initialCurrentProductIds : const <String>{},
       showSections: _isEditing,
+      selectedCategory: _selectedCategory,
+      onCategorySelected: (value) => setState(() => _selectedCategory = value),
     );
   }
 
@@ -459,6 +569,8 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
             currentProductIds:
               _isEditing ? (_initialWeeklyProductIds[_selectedWeekday] ?? const <String>{}) : const <String>{},
             showSections: _isEditing,
+            selectedCategory: _selectedCategory,
+            onCategorySelected: (value) => setState(() => _selectedCategory = value),
           ),
         ),
       ],
@@ -501,6 +613,8 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
             orderedCategories: monthlyCategories,
             currentProductIds: _isEditing ? _initialCurrentProductIds : const <String>{},
             showSections: _isEditing,
+            selectedCategory: _selectedCategory,
+            onCategorySelected: (value) => setState(() => _selectedCategory = value),
           ),
         ),
       ],
@@ -508,138 +622,180 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
   }
 
   Widget _productList(
-      List<Product> products,
-      Map<String, int> selections,
-      void Function(String, int) onQtyChange, {
-      List<String>? orderedCategories,
-      String searchTerm = '',
-      bool dense = false,
-      Set<String> currentProductIds = const <String>{},
-      bool showSections = false,
-      String currentLabel = 'Your Current Order Items',
-      String otherLabel = 'Add More Products',
-    }) {
-    final query = searchTerm.toLowerCase();
-    final filtered = products
-        .where((p) => query.isEmpty || p.name.toLowerCase().contains(query))
-        .toList();
-
-    if (showSections) {
-      final current = filtered.where((p) => currentProductIds.contains(p.id)).toList();
-      final others = filtered.where((p) => !currentProductIds.contains(p.id)).toList();
-      return ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-            child: Text(
-              currentLabel,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-          if (current.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              child: Text('No items from your current order for this selection.'),
-            )
-          else
-            ..._buildCategorizedTiles(
-              current,
-              selections,
-              onQtyChange,
-              orderedCategories: orderedCategories,
-              dense: dense,
-            ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-            child: Text(
-              otherLabel,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-          if (others.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              child: Text('No other products available.'),
-            )
-          else
-            ..._buildCategorizedTiles(
-              others,
-              selections,
-              onQtyChange,
-              orderedCategories: orderedCategories,
-              dense: dense,
-            ),
-        ],
-      );
-    }
-
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-      children: _buildCategorizedTiles(
-        filtered,
-        selections,
-        onQtyChange,
-        orderedCategories: orderedCategories,
-        dense: dense,
-      ),
-    );
-  }
-
-  List<Widget> _buildCategorizedTiles(
     List<Product> products,
     Map<String, int> selections,
     void Function(String, int) onQtyChange, {
     List<String>? orderedCategories,
+    String searchTerm = '',
     bool dense = false,
+    Set<String> currentProductIds = const <String>{},
+    bool showSections = false,
+    String? selectedCategory,
+    ValueChanged<String?>? onCategorySelected,
   }) {
-    final categories = <String, List<Product>>{};
-    for (final p in products) {
-      categories.putIfAbsent(p.category, () => []).add(p);
-    }
-    final ordered = orderedCategories ?? categories.keys.toList();
-    final seen = <String>{};
-    final catList = ordered
-        .followedBy(categories.keys)
-        .where((c) => categories.containsKey(c) && seen.add(c))
-        .toList();
-
-    final tiles = <Widget>[];
-    for (final cat in catList) {
-      tiles.add(
+    final normalizedQuery = searchTerm.toLowerCase();
+    final categories = _categoryOptions(products, orderedCategories);
+    return Column(
+      children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-          child: Text(cat, style: const TextStyle(fontWeight: FontWeight.bold)),
-        ),
-      );
-      tiles.addAll(categories[cat]!.map((p) {
-        final qty = selections[p.id] ?? 0;
-        return ListTile(
-          title: Text(p.name),
-          subtitle: Text(formatCurrency(p.price)),
-          dense: dense,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.remove_circle_outline),
-                onPressed: qty > 0 ? () => onQtyChange(p.id, qty - 1) : null,
-              ),
-              Text(qty.toString()),
-              IconButton(
-                icon: const Icon(Icons.add_circle_outline),
-                onPressed: () => onQtyChange(p.id, qty + 1),
-              ),
-            ],
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+          child: const Text(
+            'Choose a category to quickly find products',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
-        );
-      }));
-      tiles.add(const Divider());
-    }
-    return tiles;
+        ),
+        const SizedBox(height: 6),
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            itemCount: categories.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (_, index) {
+              final cat = categories[index];
+              final isSelected = selectedCategory == cat;
+              final catProducts = _filterProductsByCategory(
+                products: products,
+                category: cat,
+                searchTerm: normalizedQuery,
+              );
+              return Container(
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.teal.shade50 : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.teal.shade100),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    ListTile(
+                      dense: true,
+                      title: Text(cat, style: const TextStyle(fontWeight: FontWeight.w700)),
+                      subtitle: Text('${catProducts.length} items'),
+                      trailing: Icon(
+                        isSelected ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                        color: Colors.teal,
+                      ),
+                      onTap: onCategorySelected == null
+                          ? null
+                          : () => onCategorySelected!(isSelected ? null : cat),
+                    ),
+                    if (isSelected)
+                      catProducts.isEmpty
+                          ? const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              child: Text('No products found for this category.'),
+                            )
+                          : ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: catProducts.length,
+                              separatorBuilder: (_, __) => const Divider(height: 1),
+                              itemBuilder: (_, prodIndex) {
+                                final product = catProducts[prodIndex];
+                                final qty = selections[product.id] ?? 0;
+                                final isCurrent = showSections && currentProductIds.contains(product.id);
+                                return ListTile(
+                                  dense: dense,
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                  leading: isCurrent
+                                      ? const Icon(Icons.check_circle, color: Colors.teal, size: 20)
+                                      : null,
+                                  title: Text(product.name),
+                                  subtitle: Text(formatCurrency(product.price)),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.remove_circle_outline),
+                                        onPressed: qty > 0 ? () => onQtyChange(product.id, qty - 1) : null,
+                                      ),
+                                      Text(qty.toString()),
+                                      IconButton(
+                                        icon: const Icon(Icons.add_circle_outline),
+                                        onPressed: () => onQtyChange(product.id, qty + 1),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
+
+  List<String> _categoryOptions(List<Product> products, List<String>? orderedCategories) {
+    final options = <String>[];
+    for (final cat in _specialCategories) {
+      if (_productsForCategory(cat, products).isNotEmpty) {
+        options.add(cat);
+      }
+    }
+
+    final regularSeen = <String>{};
+    final regularCategories = orderedCategories ?? products.map((p) => p.category).toSet().toList();
+    for (final cat in regularCategories) {
+      if (regularSeen.add(cat) && _productsForCategory(cat, products).isNotEmpty) {
+        options.add(cat);
+      }
+    }
+
+    for (final cat in products.map((p) => p.category)) {
+      if (!options.contains(cat) && _productsForCategory(cat, products).isNotEmpty) {
+        options.add(cat);
+      }
+    }
+    return options;
+  }
+
+  List<Product> _productsForCategory(String category, List<Product> products) {
+    return products.where((p) => _productCategories(p).contains(category)).toList();
+  }
+
+  List<Product> _filterProductsByCategory({
+    required List<Product> products,
+    String? category,
+    String searchTerm = '',
+  }) {
+    final hasCategory = category != null && category.isNotEmpty;
+    final hasSearch = searchTerm.isNotEmpty;
+
+    if (!hasCategory && !hasSearch) {
+      return const <Product>[];
+    }
+
+    return products.where((p) {
+      final matchesCategory = hasCategory ? _productCategories(p).contains(category) : true;
+      if (!matchesCategory) return false;
+      if (!hasSearch) return true;
+      final normalizedName = _normalize(p.name);
+      final normalizedCat = _normalize(p.category);
+      return normalizedName.contains(searchTerm) || normalizedCat.contains(searchTerm);
+    }).toList();
+  }
+
+  Set<String> _productCategories(Product product) {
+    final categories = <String>{product.category};
+    final normalizedName = _normalize(product.name);
+    _specialCategoryKeywords.forEach((cat, keywords) {
+      final matches = keywords.any((keyword) => normalizedName.contains(keyword));
+      if (matches) categories.add(cat);
+    });
+    return categories;
+  }
+
+  String _normalize(String value) => value.toLowerCase();
 
   Future<void> _submit(
     BuildContext context,
