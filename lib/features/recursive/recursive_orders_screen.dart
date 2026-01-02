@@ -16,6 +16,7 @@ import '../orders/order_controller.dart';
 import '../orders/payment_screen.dart';
 import '../profile/profile_controller.dart';
 import '../wallet/wallet_controller.dart';
+import '../../routes/app_routes.dart';
 import 'models/recursive_order.dart';
 import 'recursive_order_controller.dart';
 import 'recursive_orders_list_screen.dart';
@@ -88,7 +89,6 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
       'spinach',
       'cabbage',
       'salad',
-      'abc juice',
       'lemon water',
       'ragi',
     ],
@@ -112,11 +112,10 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
       'spinach',
       'beetroot',
       'oats',
-      'olive oil',
       'flax seed',
       'walnut',
       'low-fat milk',
-      'abc juice',
+      'olive oil',
     ],
     'Sugar Control': [
       'bitter gourd',
@@ -158,7 +157,6 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
       'flax seed',
       'almond',
       'walnut',
-      'olive oil',
     ],
   };
   String _mode = 'daily';
@@ -268,6 +266,15 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
         title: const Text('Recurring Orders'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.home_outlined),
+            tooltip: 'Home',
+            onPressed: () => Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.home,
+              (route) => false,
+            ),
+          ),
+          IconButton(
             icon: const Icon(Icons.list_alt),
             onPressed: () => Navigator.push(
               context,
@@ -341,10 +348,60 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
     );
   }
 
+  Widget _editHelperNote() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.teal.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.teal.shade100),
+      ),
+      child: const Text(
+        'Items you already ordered are highlighted below. You can change quantities or add new items.',
+        style: TextStyle(fontSize: 12, color: Colors.black87),
+      ),
+    );
+  }
+
+  Widget _editModeBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.shade100),
+      ),
+      child: Row(
+        children: const [
+          Icon(Icons.edit, color: Colors.orange, size: 18),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'You are editing your existing order',
+              style: TextStyle(fontWeight: FontWeight.w700, color: Colors.orange),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _bodyContent(List<Product> products) {
     final profile = ref.watch(profileControllerProvider);
     return Column(
       children: [
+        if (_isEditing)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            child: _editModeBanner(),
+          ),
+        if (_isEditing)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            child: _editHelperNote(),
+          ),
         Expanded(
           child: Builder(
             builder: (_) {
@@ -365,43 +422,149 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
   }
 
   Widget _paymentRow(List<Product> products, ProfileState profile) {
+    final summary = _editSummary(products);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
         border: const Border(top: BorderSide(color: Colors.black12)),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const RecursiveOrdersListScreen()),
+          _summaryBar(summary),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const RecursiveOrdersListScreen()),
+                  ),
+                  child: const Text('Show orders'),
+                ),
               ),
-              child: const Text('Show orders'),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () async => _submit(context, products, profile),
-              child: const Text('Proceed'),
-            ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async => _submit(context, products, profile),
+                  child: const Text('Proceed'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
+  Widget _summaryBar(_EditSummary summary) {
+    final deltaColor = summary.delta > 0
+        ? Colors.red
+        : summary.delta < 0
+            ? Colors.teal
+            : Colors.black87;
+    final deltaLabel = summary.delta > 0
+        ? '+${formatCurrency(summary.delta)}'
+        : summary.delta < 0
+            ? '-${formatCurrency(summary.delta.abs())}'
+            : formatCurrency(0);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.teal.shade100),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Edit Summary', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                const SizedBox(height: 2),
+                Text('Items: ${summary.totalItems}')
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              const Text('Net change', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(deltaLabel, style: TextStyle(fontWeight: FontWeight.w700, color: deltaColor)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  _EditSummary _editSummary(List<Product> products) {
+    final current = _currentTotal(products);
+    final prior = widget.initialOrder?.currentAmount ?? 0;
+    final delta = current - prior;
+    return _EditSummary(
+      totalItems: _currentItemCount(),
+      currentTotal: current,
+      priorTotal: prior,
+      delta: delta,
+    );
+  }
+
+  double _currentTotal(List<Product> products) {
+    if (_mode == 'weekly') {
+      final weekly = _collectWeeklySelections();
+      final perWeekTotal = weekly.values
+          .map((dayItems) => _sum(dayItems, products))
+          .fold<double>(0, (a, b) => a + b);
+      final weeks = _selectedWeeksCount();
+      return perWeekTotal * weeks;
+    }
+
+    if (_mode == 'monthly') {
+      final items = Map<String, int>.from(_monthlyItems)..removeWhere((_, q) => q <= 0);
+      return _sum(items, products);
+    }
+
+    final items = Map<String, int>.from(_dailyItems)..removeWhere((_, q) => q <= 0);
+    return _sum(items, products);
+  }
+
+  int _currentItemCount() {
+    if (_mode == 'weekly') {
+      final weekly = _collectWeeklySelections();
+      final perWeekCount = weekly.values
+          .map((dayItems) => dayItems.values.fold<int>(0, (a, b) => a + b))
+          .fold<int>(0, (a, b) => a + b);
+      return perWeekCount * _selectedWeeksCount();
+    }
+
+    if (_mode == 'monthly') {
+      return _monthlyItems.values.fold<int>(0, (a, b) => a + b);
+    }
+
+    return _dailyItems.values.fold<int>(0, (a, b) => a + b);
+  }
+
+  int _selectedWeeksCount() => _selectedWeeks.isEmpty ? 1 : _selectedWeeks.length;
+
   Widget _buildDaily(List<Product> products) {
     const orderedCategories = ['Fruits', 'Dairy', 'Vegetables', 'Meat', 'Health', 'Others'];
     return _productList(
+      context,
       products,
       _dailyItems,
-      (id, qty) => setState(() => _dailyItems[id] = qty),
+      (id, qty) => setState(() {
+        if (qty <= 0) {
+          _dailyItems.remove(id);
+        } else {
+          _dailyItems[id] = qty;
+        }
+      }),
       orderedCategories: orderedCategories,
-      currentProductIds: _isEditing ? _initialCurrentProductIds : const <String>{},
       showSections: _isEditing,
       selectedCategory: _selectedCategory,
       onCategorySelected: (value) => setState(() => _selectedCategory = value),
@@ -554,6 +717,7 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
           ),
         Expanded(
           child: _productList(
+            context,
             products,
             dayItems,
             (id, qty) => setState(() {
@@ -566,8 +730,6 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
             orderedCategories: categories,
             searchTerm: _searchQuery,
             dense: true,
-            currentProductIds:
-              _isEditing ? (_initialWeeklyProductIds[_selectedWeekday] ?? const <String>{}) : const <String>{},
             showSections: _isEditing,
             selectedCategory: _selectedCategory,
             onCategorySelected: (value) => setState(() => _selectedCategory = value),
@@ -607,11 +769,17 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
         ),
         Expanded(
           child: _productList(
+            context,
             products,
             _monthlyItems,
-            (id, qty) => setState(() => _monthlyItems[id] = qty),
+            (id, qty) => setState(() {
+              if (qty <= 0) {
+                _monthlyItems.remove(id);
+              } else {
+                _monthlyItems[id] = qty;
+              }
+            }),
             orderedCategories: monthlyCategories,
-            currentProductIds: _isEditing ? _initialCurrentProductIds : const <String>{},
             showSections: _isEditing,
             selectedCategory: _selectedCategory,
             onCategorySelected: (value) => setState(() => _selectedCategory = value),
@@ -622,117 +790,257 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
   }
 
   Widget _productList(
+    BuildContext context,
     List<Product> products,
     Map<String, int> selections,
     void Function(String, int) onQtyChange, {
     List<String>? orderedCategories,
     String searchTerm = '',
     bool dense = false,
-    Set<String> currentProductIds = const <String>{},
     bool showSections = false,
     String? selectedCategory,
     ValueChanged<String?>? onCategorySelected,
   }) {
     final normalizedQuery = searchTerm.toLowerCase();
+    final productById = {for (final p in products) p.id: p};
+    final existingEntries = selections.entries
+        .where((e) => e.value > 0 && productById.containsKey(e.key))
+        .toList();
+    final filteredExisting = existingEntries.where((e) {
+      final product = productById[e.key]!;
+      final normalizedName = _normalize(product.name);
+      final normalizedCat = _normalize(product.category);
+      if (normalizedQuery.isEmpty) return true;
+      return normalizedName.contains(normalizedQuery) || normalizedCat.contains(normalizedQuery);
+    }).toList();
+    final existingIds = existingEntries.map((e) => e.key).toSet();
     final categories = _categoryOptions(products, orderedCategories);
+
+    void handleQtyChange(String productId, int nextQty) {
+      final previous = selections[productId] ?? 0;
+      final sanitized = nextQty < 0 ? 0 : nextQty;
+      onQtyChange(productId, sanitized);
+      if (previous > 0 && sanitized > previous) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Quantity updated for existing item'),
+            duration: Duration(seconds: 1),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+
+    final addMoreLabel = showSections ? 'Add More Products' : 'Products';
+
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-          child: const Text(
-            'Choose a category to quickly find products',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-        ),
-        const SizedBox(height: 6),
         Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            itemCount: categories.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (_, index) {
-              final cat = categories[index];
-              final isSelected = selectedCategory == cat;
-              final catProducts = _filterProductsByCategory(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            children: [
+              if (showSections)
+                _currentOrderSection(filteredExisting, productById, selections, handleQtyChange, dense),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(2, 6, 2, 4),
+                child: Text(
+                  addMoreLabel,
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(2, 0, 2, 6),
+                child: const Text(
+                  'Choose a category to quickly find products',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ),
+              ..._categoryCards(
+                categories: categories,
                 products: products,
-                category: cat,
-                searchTerm: normalizedQuery,
-              );
-              return Container(
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.teal.shade50 : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.teal.shade100),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    ListTile(
-                      dense: true,
-                      title: Text(cat, style: const TextStyle(fontWeight: FontWeight.w700)),
-                      subtitle: Text('${catProducts.length} items'),
-                      trailing: Icon(
-                        isSelected ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                        color: Colors.teal,
-                      ),
-                      onTap: onCategorySelected == null
-                          ? null
-                          : () => onCategorySelected!(isSelected ? null : cat),
-                    ),
-                    if (isSelected)
-                      catProducts.isEmpty
-                          ? const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                              child: Text('No products found for this category.'),
-                            )
-                          : ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: catProducts.length,
-                              separatorBuilder: (_, __) => const Divider(height: 1),
-                              itemBuilder: (_, prodIndex) {
-                                final product = catProducts[prodIndex];
-                                final qty = selections[product.id] ?? 0;
-                                final isCurrent = showSections && currentProductIds.contains(product.id);
-                                return ListTile(
-                                  dense: dense,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                  leading: isCurrent
-                                      ? const Icon(Icons.check_circle, color: Colors.teal, size: 20)
-                                      : null,
-                                  title: Text(product.name),
-                                  subtitle: Text(formatCurrency(product.price)),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.remove_circle_outline),
-                                        onPressed: qty > 0 ? () => onQtyChange(product.id, qty - 1) : null,
-                                      ),
-                                      Text(qty.toString()),
-                                      IconButton(
-                                        icon: const Icon(Icons.add_circle_outline),
-                                        onPressed: () => onQtyChange(product.id, qty + 1),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                  ],
-                ),
-              );
-            },
+                normalizedQuery: normalizedQuery,
+                selectedCategory: selectedCategory,
+                onCategorySelected: onCategorySelected,
+                selections: selections,
+                onQtyChange: handleQtyChange,
+                dense: dense,
+                excludeIds: showSections ? existingIds : const <String>{},
+              ),
+              const SizedBox(height: 12),
+            ],
           ),
         ),
       ],
     );
+  }
+
+  Widget _currentOrderSection(
+    List<MapEntry<String, int>> entries,
+    Map<String, Product> productById,
+    Map<String, int> selections,
+    void Function(String, int) onQtyChange,
+    bool dense,
+  ) {
+    if (entries.isEmpty) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.teal.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.teal.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Your Current Order', style: TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          ...entries.map((entry) {
+            final product = productById[entry.key]!;
+            final qty = selections[product.id] ?? 0;
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.teal.shade200),
+              ),
+              child: ListTile(
+                dense: dense,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                leading: const Icon(Icons.check_circle, color: Colors.teal, size: 20),
+                title: Text(product.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(formatCurrency(product.price)),
+                    const SizedBox(height: 2),
+                    const Text('Already added', style: TextStyle(color: Colors.red, fontSize: 12)),
+                  ],
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: qty > 0 ? () => onQtyChange(product.id, qty - 1) : null,
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Text('x$qty', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w700)),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: () => onQtyChange(product.id, qty + 1),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _categoryCards({
+    required List<String> categories,
+    required List<Product> products,
+    required String normalizedQuery,
+    required String? selectedCategory,
+    required ValueChanged<String?>? onCategorySelected,
+    required Map<String, int> selections,
+    required void Function(String, int) onQtyChange,
+    required bool dense,
+    Set<String> excludeIds = const <String>{},
+  }) {
+    final cards = <Widget>[];
+    for (final cat in categories) {
+      final isSelected = selectedCategory == cat;
+      final catProducts = _filterProductsByCategory(
+        products: products,
+        category: cat,
+        searchTerm: normalizedQuery,
+        excludeIds: excludeIds,
+      );
+
+      cards.add(
+        Container(
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.teal.shade50 : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.teal.shade100),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              ListTile(
+                dense: true,
+                title: Text(cat, style: const TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: Text('${catProducts.length} items'),
+                trailing: Icon(
+                  isSelected ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  color: Colors.teal,
+                ),
+                onTap: onCategorySelected == null
+                    ? null
+                    : () => onCategorySelected!(isSelected ? null : cat),
+              ),
+              if (isSelected)
+                catProducts.isEmpty
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        child: Text('No products found for this category.'),
+                      )
+                    : ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: catProducts.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (_, prodIndex) {
+                          final product = catProducts[prodIndex];
+                          final qty = selections[product.id] ?? 0;
+                          return ListTile(
+                            dense: dense,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            title: Text(product.name),
+                            subtitle: Text(formatCurrency(product.price)),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.remove_circle_outline),
+                                  onPressed: qty > 0 ? () => onQtyChange(product.id, qty - 1) : null,
+                                ),
+                                Text(qty.toString()),
+                                IconButton(
+                                  icon: const Icon(Icons.add_circle_outline),
+                                  onPressed: () => onQtyChange(product.id, qty + 1),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+            ],
+          ),
+        ),
+      );
+
+      cards.add(const SizedBox(height: 8));
+    }
+    return cards;
   }
 
   List<String> _categoryOptions(List<Product> products, List<String>? orderedCategories) {
@@ -767,6 +1075,7 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
     required List<Product> products,
     String? category,
     String searchTerm = '',
+    Set<String> excludeIds = const <String>{},
   }) {
     final hasCategory = category != null && category.isNotEmpty;
     final hasSearch = searchTerm.isNotEmpty;
@@ -776,6 +1085,7 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
     }
 
     return products.where((p) {
+      if (excludeIds.contains(p.id)) return false;
       final matchesCategory = hasCategory ? _productCategories(p).contains(category) : true;
       if (!matchesCategory) return false;
       if (!hasSearch) return true;
@@ -821,13 +1131,15 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
       plannedWeekStart: plannedWeekStart,
       monthlyDay: _mode == 'monthly' ? _monthlyDay : null,
     );
-    final isDuplicate = await _checkDuplicateOrder(
-      context: context,
-      address: address,
-      profileState: profileState,
-      deliveryWeekStart: deliveryWeekStart,
-    );
-    if (isDuplicate) return;
+    if (!_isEditing) {
+      final isDuplicate = await _checkDuplicateOrder(
+        context: context,
+        address: address,
+        profileState: profileState,
+        deliveryWeekStart: deliveryWeekStart,
+      );
+      if (isDuplicate) return;
+    }
 
     if (_mode == 'daily') {
       await _saveDaily(context, products, address, userId, deliveryWeekStart);
@@ -1202,17 +1514,30 @@ class _RecursiveOrdersScreenState extends ConsumerState<RecursiveOrdersScreen> {
     await ref.read(recursiveOrderControllerProvider.notifier).saveOrder(order);
     if (!mounted) return;
 
+    // Clear cart state after a successful save so user starts fresh.
+    ref.read(cartControllerProvider.notifier).clear();
+
     if (pendingOrder != null) {
-      Navigator.push(
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => PaymentScreen(order: pendingOrder!)),
       );
-    } else {
-      _warn(context, 'Plan saved successfully');
+      return;
     }
 
-    // Clear cart state after a successful save so user starts fresh.
-    ref.read(cartControllerProvider.notifier).clear();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Order updated successfully'),
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const RecursiveOrdersListScreen()),
+      (route) => false,
+    );
   }
 
   List<CartItem> _toCartItems(Map<String, dynamic> items, List<Product> products) {
@@ -1484,4 +1809,18 @@ class DeliveryLocation {
       label: label ?? this.label,
     );
   }
+}
+
+class _EditSummary {
+  const _EditSummary({
+    required this.totalItems,
+    required this.currentTotal,
+    required this.priorTotal,
+    required this.delta,
+  });
+
+  final int totalItems;
+  final double currentTotal;
+  final double priorTotal;
+  final double delta;
 }

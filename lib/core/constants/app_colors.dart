@@ -12,4 +12,6 @@ class AppColors {
   static const secondary = Color(0xFF00ACC1);
   static const background = Color(0xFFFFF8E1); // Pale yellow background
   static const danger = Color(0xFFD32F2F);
+  static const success = Color(0xFF2E7D32);
+  static const warning = Color(0xFFFFA000);
 }

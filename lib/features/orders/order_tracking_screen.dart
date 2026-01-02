@@ -3,15 +3,26 @@
 // Keep logic simple, readable, and production-safe.
 // Do not introduce unnecessary patterns or libraries.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/providers/core_providers.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/utils/money_utils.dart';
+import '../../routes/app_routes.dart';
 import 'models/order.dart';
 import 'order_controller.dart';
+import 'order_repository.dart';
+
+final userOrdersProvider = StreamProvider.autoDispose<List<Order>>((ref) {
+  final uid = ref.watch(firebaseAuthProvider).currentUser?.uid;
+  if (uid == null) return const Stream.empty();
+  return ref.read(orderRepositoryProvider).watchUserOrders(uid);
+});
 
 class OrderTrackingScreen extends ConsumerWidget {
   const OrderTrackingScreen({super.key});
@@ -36,11 +47,25 @@ class OrderTrackingScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final orders = ref.watch(orderControllerProvider);
+    final ordersAsync = ref.watch(userOrdersProvider);
     return Scaffold(
       backgroundColor: Colors.teal.shade50,
-      appBar: AppBar(title: const Text(AppStrings.ordersTitle)),
-      body: orders.isEmpty
+      appBar: AppBar(
+        title: const Text(AppStrings.ordersTitle),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home_outlined),
+            tooltip: 'Home',
+            onPressed: () => Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.home,
+              (route) => false,
+            ),
+          ),
+        ],
+      ),
+        body: ordersAsync.when(
+        data: (orders) => orders.isEmpty
           ? const Center(child: Text('No orders yet'))
           : ListView.separated(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
@@ -137,6 +162,9 @@ class OrderTrackingScreen extends ConsumerWidget {
                 );
               },
             ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(child: Text('Failed to load orders: $error')),
+      ),
     );
   }
 

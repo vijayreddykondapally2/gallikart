@@ -18,9 +18,12 @@ class RecursiveOrderRepository {
 
   static const _collectionName = 'recursiveOrders';
 
-  Future<List<RecursiveOrder>> fetchOrders() async {
-    final docs = await _service.fetchCollection(_collectionName);
-    return docs.map((doc) => RecursiveOrder.fromMap(doc.data())).toList();
+  Future<List<RecursiveOrder>> fetchOrdersForUser(String userId) async {
+    final query = await _service
+        .collection(_collectionName)
+        .where('userId', isEqualTo: userId)
+        .get();
+    return query.docs.map((doc) => RecursiveOrder.fromMap(doc.data())).toList();
   }
 
   Future<RecursiveOrder?> fetchById(String id) async {

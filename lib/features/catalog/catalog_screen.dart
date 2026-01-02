@@ -13,6 +13,7 @@ import '../../core/widgets/error_view.dart';
 import '../../core/widgets/loader.dart';
 import '../../routes/app_routes.dart';
 import '../cart/cart_controller.dart';
+import '../auth/user_role_provider.dart';
 import 'catalog_controller.dart';
 import 'models/product.dart';
 
@@ -85,6 +86,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
         final state = ref.watch(catalogControllerProvider);
         final cartItems = ref.watch(cartControllerProvider);
         final cartQty = cartItems.fold(0, (sum, item) => sum + item.quantity);
+        final role = ref.watch(userRoleProvider).maybeWhen(data: (r) => r, orElse: () => roleUser);
         return Scaffold(
           backgroundColor: Colors.teal.shade50,
           appBar: AppBar(
@@ -112,6 +114,12 @@ class _CatalogScreenState extends State<CatalogScreen> {
                 onPressed: () => Navigator.pushNamed(context, AppRoutes.profile),
                 icon: const Icon(Icons.person_outline, color: Colors.teal),
               ),
+              if (role == roleOwner || role == roleStaff || role == roleDelivery)
+                IconButton(
+                  onPressed: () => Navigator.pushNamed(context, AppRoutes.admin),
+                  icon: const Icon(Icons.shield_moon_outlined, color: Colors.teal),
+                  tooltip: 'Admin / Delivery',
+                ),
               IconButton(
                 onPressed: () =>
                     ref.read(catalogControllerProvider.notifier).refresh(),
@@ -364,9 +372,12 @@ class _CatalogScreenState extends State<CatalogScreen> {
                     children: [
                       const Icon(Icons.category, size: 14, color: Colors.teal),
                       const SizedBox(width: 4),
-                      Text(
-                        product.category,
-                        style: TextStyle(color: Colors.grey.shade600),
+                      Expanded(
+                        child: Text(
+                          product.category,
+                          style: TextStyle(color: Colors.grey.shade600),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),

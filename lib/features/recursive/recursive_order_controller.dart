@@ -3,18 +3,21 @@
 // Keep logic simple, readable, and production-safe.
 // Do not introduce unnecessary patterns or libraries.
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../wallet/wallet_controller.dart';
 import 'models/recursive_order.dart';
 import 'recursive_order_repository.dart';
+import '../../core/providers/core_providers.dart';
 
 class RecursiveOrderController extends StateNotifier<AsyncValue<List<RecursiveOrder>>> {
-  RecursiveOrderController(this._repository, this._walletController)
+  RecursiveOrderController(this._repository, this._walletController, this._auth)
       : super(const AsyncValue.data([]));
 
   final RecursiveOrderRepository _repository;
   final WalletController _walletController;
+  final FirebaseAuth _auth;
 
   Future<void> markDeltaPaid({
     required String recurringOrderId,
@@ -34,9 +37,15 @@ class RecursiveOrderController extends StateNotifier<AsyncValue<List<RecursiveOr
   }
 
   Future<void> loadOrders() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
+
     state = const AsyncLoading();
     try {
-      final orders = await _repository.fetchOrders();
+      final orders = await _repository.fetchOrdersForUser(uid);
       state = AsyncValue.data(orders);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -119,5 +128,6 @@ final recursiveOrderControllerProvider =
   (ref) => RecursiveOrderController(
     ref.read(recursiveOrderRepositoryProvider),
     ref.read(walletControllerProvider.notifier),
+    ref.read(firebaseAuthProvider),
   )..loadOrders(),
 );

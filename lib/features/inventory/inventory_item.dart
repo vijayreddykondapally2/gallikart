@@ -7,23 +7,42 @@ class InventoryItem {
   InventoryItem({
     required this.id,
     required this.name,
-    required this.stock,
-    required this.reorderLevel,
+    required this.price,
+    required this.stockQty,
+    required this.unit,
+    required this.lowStockThreshold,
+    required this.isAvailable,
+    this.updatedAt,
   });
 
   final String id;
   final String name;
-  final int stock;
-  final int reorderLevel;
+  final double price;
+  final double stockQty;
+  final String unit;
+  final double lowStockThreshold;
+  final bool isAvailable;
+  final DateTime? updatedAt;
 
-  InventoryItem copyWith({int? stock}) {
+  InventoryItem copyWith({
+    double? price,
+    double? stockQty,
+    bool? isAvailable,
+    double? lowStockThreshold,
+    DateTime? updatedAt,
+  }) {
     return InventoryItem(
       id: id,
       name: name,
-      stock: stock ?? this.stock,
-      reorderLevel: reorderLevel,
+      price: price ?? this.price,
+      stockQty: stockQty ?? this.stockQty,
+      unit: unit,
+      lowStockThreshold: lowStockThreshold ?? this.lowStockThreshold,
+      isAvailable: isAvailable ?? this.isAvailable,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
-  bool get isLowStock => stock <= reorderLevel;
+  bool get isLowStock => stockQty <= lowStockThreshold;
+  bool get isOutOfStock => stockQty <= 0;
 }

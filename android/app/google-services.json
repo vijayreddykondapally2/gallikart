@@ -9,7 +9,26 @@
       "client_info": {
         "mobilesdk_app_id": "1:775719617484:android:a777dc32a45e372db7d369",
         "android_client_info": {
-          "package_name": "com.example.gallikart"
+          "package_name": "com.gallikart.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCB8WKAgwOiBKQa_kUBM0OaMMqQ1gLW8Bs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:775719617484:android:b620f8953a578e75b7d369",
+        "android_client_info": {
+          "package_name": "com.gallikart.app"
         }
       },
       "oauth_client": [],

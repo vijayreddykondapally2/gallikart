@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/widgets/primary_button.dart';
+import '../../routes/app_routes.dart';
 import 'models/recursive_order.dart';
 import 'recursive_order_controller.dart';
 import 'recursive_order_utils.dart';
@@ -22,7 +23,24 @@ class RecursiveOrdersListScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Colors.teal.shade50,
-      appBar: AppBar(title: const Text('Saved Recursive Orders')),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text('Saved Recursive Orders'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home_outlined),
+            tooltip: 'Home',
+            onPressed: () => Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.home,
+              (route) => false,
+            ),
+          ),
+        ],
+      ),
       body: ordersAsync.when(
         data: (orders) {
           if (orders.isEmpty) {

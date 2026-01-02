@@ -14,6 +14,10 @@ class FirestoreService {
     return _firestore.collection(path);
   }
 
+  Query<Map<String, dynamic>> collectionGroup(String collectionId) {
+    return _firestore.collectionGroup(collectionId);
+  }
+
   DocumentReference<Map<String, dynamic>> document(String path) {
     return _firestore.doc(path);
   }

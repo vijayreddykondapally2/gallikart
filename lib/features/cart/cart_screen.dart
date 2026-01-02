@@ -29,7 +29,20 @@ class CartScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Colors.teal.shade50,
-      appBar: AppBar(title: const Text(AppStrings.cartTitle)),
+      appBar: AppBar(
+        title: const Text(AppStrings.cartTitle),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home_outlined),
+            tooltip: 'Home',
+            onPressed: () => Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.home,
+              (route) => false,
+            ),
+          ),
+        ],
+      ),
       body: cartItems.isEmpty
           ? const Center(child: Text('Cart is empty'))
           : Column(

@@ -11,6 +11,7 @@ import '../recursive/recursive_order_controller.dart';
 import 'models/order.dart';
 import 'order_repository.dart';
 import '../wallet/wallet_controller.dart';
+import '../../core/providers/core_providers.dart';
 
 class OrderController extends StateNotifier<List<Order>> {
   OrderController(
@@ -34,6 +35,8 @@ class OrderController extends StateNotifier<List<Order>> {
     String? deliveryLabel,
   }) {
     if (cartItems.isEmpty) return null;
+    final userId = _userId();
+    if (userId == null || userId.isEmpty) return null;
     final id = DateTime.now().millisecondsSinceEpoch.toString();
     final snapshot = cartItems
         .map((item) => CartItem(product: item.product, quantity: item.quantity))
@@ -64,6 +67,9 @@ class OrderController extends StateNotifier<List<Order>> {
       deliveryLatitude: deliveryLatitude,
       deliveryLongitude: deliveryLongitude,
       deliveryLabel: deliveryLabel,
+      orderType: 'INSTANT',
+      deliveryDate: _todayKey(),
+      userId: userId,
     );
     state = [...state, order];
     if (netDue <= 0) {
@@ -85,6 +91,10 @@ class OrderController extends StateNotifier<List<Order>> {
     double? deliveryLongitude,
     String? deliveryLabel,
   }) {
+    final userId = _userId();
+    if (userId == null || userId.isEmpty) {
+      throw StateError('User must be signed in to create order');
+    }
     final id = DateTime.now().millisecondsSinceEpoch.toString();
     final walletUse = applyWallet
         ? _walletController.preview(amount)
@@ -114,6 +124,9 @@ class OrderController extends StateNotifier<List<Order>> {
       deliveryLatitude: deliveryLatitude,
       deliveryLongitude: deliveryLongitude,
       deliveryLabel: deliveryLabel,
+      orderType: 'RECURRING',
+      deliveryDate: _todayKey(),
+      userId: userId,
     );
     state = [...state, order];
     if (netDue <= 0) {
@@ -128,6 +141,10 @@ class OrderController extends StateNotifier<List<Order>> {
     String? paymentReference,
     double walletAppliedExtra = 0,
   }) async {
+    final userId = order.userId ?? _userId();
+    if (userId == null || userId.isEmpty) {
+      throw StateError('User must be signed in to confirm order');
+    }
     if (order.status == 'DELIVERED') {
       return order;
     }
@@ -145,6 +162,7 @@ class OrderController extends StateNotifier<List<Order>> {
         paymentReference: paymentReference ?? order.paymentReference,
         recurringOrderId: order.recurringOrderId,
         recurringDelta: order.recurringDelta,
+        userId: userId,
         deliveryAddress: order.deliveryAddress,
         deliveryLatitude: order.deliveryLatitude,
         deliveryLongitude: order.deliveryLongitude,
@@ -183,6 +201,7 @@ class OrderController extends StateNotifier<List<Order>> {
       paymentReference: paymentReference,
       recurringOrderId: order.recurringOrderId,
       recurringDelta: order.recurringDelta,
+      userId: userId,
     );
     await _repository.placeOrder(confirmed);
     state = [...state.where((o) => o.id != confirmed.id), confirmed];
@@ -243,6 +262,15 @@ class OrderController extends StateNotifier<List<Order>> {
         return order.copyWith(status: 'PLACED');
     }
   }
+
+  String _todayKey() {
+    final now = DateTime.now();
+    final mm = now.month.toString().padLeft(2, '0');
+    final dd = now.day.toString().padLeft(2, '0');
+    return '${now.year}-$mm-$dd';
+  }
+
+  String? _userId() => _ref.read(authServiceProvider).currentUser?.uid;
 }
 
 final orderControllerProvider =

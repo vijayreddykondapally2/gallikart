@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants/app_strings.dart';
 import '../../core/services/location_service.dart';
+import '../../routes/app_routes.dart';
 import '../orders/order_controller.dart';
 import 'delivery_controller.dart';
 
@@ -121,6 +122,15 @@ class DeliveryScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text(AppStrings.deliveryTitle),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.home_outlined),
+            tooltip: 'Home',
+            onPressed: () => Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.home,
+              (route) => false,
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.my_location),
             tooltip: 'Refresh location',

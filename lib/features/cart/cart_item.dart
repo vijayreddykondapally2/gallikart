@@ -12,4 +12,16 @@ class CartItem {
   int quantity;
 
   double get total => product.price * quantity;
+
+  static Product productFromMap(Map<String, dynamic> data) {
+    return Product(
+      id: data['productId'] as String? ?? data['id'] as String? ?? 'unknown',
+      name: data['name'] as String? ?? 'Unknown',
+      category: data['category'] as String? ?? 'General',
+      price: (data['price'] as num?)?.toDouble() ?? 0,
+      stock: (data['stock'] as num?)?.toInt() ?? 0,
+      isActive: data['isActive'] as bool? ?? true,
+      imageUrl: data['imageUrl'] as String? ?? '',
+    );
+  }
 }

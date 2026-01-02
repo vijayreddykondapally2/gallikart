@@ -3,6 +3,8 @@
 // Keep logic simple, readable, and production-safe.
 // Do not introduce unnecessary patterns or libraries.
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../cart/cart_item.dart';
 
 class Order {
@@ -22,6 +24,10 @@ class Order {
     this.deliveryLatitude,
     this.deliveryLongitude,
     this.deliveryLabel,
+    this.orderType,
+    this.deliveryDate,
+    this.activeDays = const <String>[],
+    this.userId,
     DateTime? placedAt,
     this.confirmedAt,
     this.packedAt,
@@ -45,6 +51,10 @@ class Order {
   final double? deliveryLatitude;
   final double? deliveryLongitude;
   final String? deliveryLabel;
+  final String? orderType; // INSTANT | RECURRING | OTHER
+  final String? deliveryDate; // yyyy-MM-dd
+  final List<String> activeDays; // e.g., ['Mon','Tue']
+  final String? userId;
   final DateTime placedAt;
   final DateTime? confirmedAt;
   final DateTime? packedAt;
@@ -58,7 +68,7 @@ class Order {
       'walletApplied': walletApplied,
       'amountDue': amountDue,
       'status': status,
-      'createdAt': createdAt.toIso8601String(),
+      'createdAt': createdAt,
       'paymentMethod': paymentMethod,
       'paymentReference': paymentReference,
       'recurringOrderId': recurringOrderId,
@@ -67,12 +77,17 @@ class Order {
       'deliveryLatitude': deliveryLatitude,
       'deliveryLongitude': deliveryLongitude,
       'deliveryLabel': deliveryLabel,
-      'placedAt': placedAt.toIso8601String(),
-      'confirmedAt': confirmedAt?.toIso8601String(),
-      'packedAt': packedAt?.toIso8601String(),
-      'outForDeliveryAt': outForDeliveryAt?.toIso8601String(),
-      'nearYouAt': nearYouAt?.toIso8601String(),
-      'deliveredAt': deliveredAt?.toIso8601String(),
+      'orderType': orderType ?? 'INSTANT',
+      'orderStatus': status,
+      'deliveryDate': deliveryDate,
+      'activeDays': activeDays,
+      'userId': userId,
+      'placedAt': placedAt,
+      'confirmedAt': confirmedAt,
+      'packedAt': packedAt,
+      'outForDeliveryAt': outForDeliveryAt,
+      'nearYouAt': nearYouAt,
+      'deliveredAt': deliveredAt,
       'items': items
           .map((item) => {
                 'productId': item.product.id,
@@ -129,6 +144,56 @@ class Order {
       outForDeliveryAt: outForDeliveryAt ?? this.outForDeliveryAt,
       nearYouAt: nearYouAt ?? this.nearYouAt,
       deliveredAt: deliveredAt ?? this.deliveredAt,
+      orderType: orderType ?? this.orderType,
+      deliveryDate: deliveryDate ?? this.deliveryDate,
+      activeDays: activeDays ?? this.activeDays,
+      userId: userId ?? this.userId,
+    );
+  }
+
+  factory Order.fromMap(String id, Map<String, dynamic> map) {
+    DateTime? _parse(dynamic value) {
+      if (value == null) return null;
+      if (value is Timestamp) return value.toDate();
+      if (value is String && value.isNotEmpty) return DateTime.tryParse(value);
+      return null;
+    }
+
+    final items = (map['items'] as List<dynamic>? ?? [])
+        .map((e) => e as Map<String, dynamic>?)
+        .whereType<Map<String, dynamic>>()
+        .map((e) => CartItem(
+              product: CartItem.productFromMap(e),
+              quantity: (e['quantity'] as num?)?.toInt() ?? 0,
+            ))
+        .toList();
+
+    return Order(
+      id: id,
+      items: items,
+      totalAmount: (map['totalAmount'] as num?)?.toDouble() ?? 0,
+      walletApplied: (map['walletApplied'] as num?)?.toDouble() ?? 0,
+      amountDue: (map['amountDue'] as num?)?.toDouble() ?? 0,
+      status: (map['orderStatus'] as String?) ?? (map['status'] as String?) ?? 'PLACED',
+      createdAt: _parse(map['createdAt']) ?? DateTime.now(),
+      paymentMethod: map['paymentMethod'] as String?,
+      paymentReference: map['paymentReference'] as String?,
+      recurringOrderId: map['recurringOrderId'] as String?,
+      recurringDelta: (map['recurringDelta'] as num?)?.toDouble(),
+      deliveryAddress: map['deliveryAddress'] as String?,
+      deliveryLatitude: (map['deliveryLatitude'] as num?)?.toDouble(),
+      deliveryLongitude: (map['deliveryLongitude'] as num?)?.toDouble(),
+      deliveryLabel: map['deliveryLabel'] as String?,
+      orderType: map['orderType'] as String?,
+      deliveryDate: map['deliveryDate'] as String?,
+      activeDays: List<String>.from((map['activeDays'] as List?)?.whereType<String>() ?? const <String>[]),
+      userId: map['userId'] as String?,
+      placedAt: _parse(map['placedAt']) ?? DateTime.now(),
+      confirmedAt: _parse(map['confirmedAt']),
+      packedAt: _parse(map['packedAt']),
+      outForDeliveryAt: _parse(map['outForDeliveryAt']),
+      nearYouAt: _parse(map['nearYouAt']),
+      deliveredAt: _parse(map['deliveredAt']),
     );
   }
 }
